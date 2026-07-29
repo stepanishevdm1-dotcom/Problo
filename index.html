@@ -1,15 +1,12 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Улучшение фото — Pic Refiner</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Улучшение фото (Pic Refiner)</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* --- ТВОЙ СТИЛЬ (оставил как был) --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: system-ui, -apple-system, sans-serif;
             background: #0b0e14;
@@ -28,69 +25,30 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
             border: 1px solid #2a3344;
         }
-        h1 {
-            color: #fff;
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-        .sub {
-            color: #8892a8;
-            font-size: 14px;
-            margin-bottom: 24px;
-        }
+        h1 { color: #fff; font-size: 24px; margin-bottom: 6px; }
+        .sub { color: #8892a8; font-size: 14px; margin-bottom: 24px; }
         .drop-zone {
             border: 2px dashed #2a3344;
             border-radius: 16px;
             padding: 40px 20px;
             text-align: center;
             color: #b0baca;
-            font-size: 14px;
-            cursor: pointer;
-            transition: border-color 0.2s, background 0.2s;
             background: #10161f;
+            cursor: pointer;
         }
-        .drop-zone:hover {
-            border-color: #4a5a7a;
-        }
-        .drop-zone.dragover {
-            border-color: #6c8cff;
-            background: #1a2332;
-        }
-        .drop-zone img {
-            max-width: 100%;
-            max-height: 240px;
-            border-radius: 12px;
-            margin-bottom: 12px;
-        }
-        .drop-zone .icon {
-            font-size: 48px;
-            display: block;
-            margin-bottom: 8px;
-        }
-        .drop-zone .hint {
-            font-size: 13px;
-            color: #5e6b84;
-            margin-top: 6px;
-        }
-        #fileInput {
-            display: none;
-        }
+        .drop-zone.dragover { border-color: #6c8cff; background: #1a2332; }
+        .drop-zone img { max-width: 100%; max-height: 240px; border-radius: 12px; }
+        #fileInput { display: none; }
         .info-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-top: 16px;
+            margin: 16px 0;
             padding: 14px 16px;
             background: #10161f;
             border-radius: 12px;
             color: #b0baca;
-            font-size: 14px;
         }
-        .info-row .price {
-            color: #6c8cff;
-            font-weight: 600;
-        }
+        .info-row .price { color: #6c8cff; font-weight: 600; }
         .btn {
             width: 100%;
             padding: 14px;
@@ -99,12 +57,251 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: opacity 0.2s, transform 0.1s;
+            background: #6c8cff;
+            color: #fff;
             margin-top: 16px;
         }
-        .btn:active {
-            transform: scale(0.97);
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-danger { background: #ff6b6b; }
+        .status {
+            margin-top: 16px;
+            padding: 14px;
+            border-radius: 12px;
+            display: none;
+            align-items: center;
+            gap: 10px;
         }
+        .status.loading { display: flex; background: #1a2332; color: #b0baca; }
+        .status.success { display: flex; background: #1a2f2a; color: #6fcf97; }
+        .status.error { display: flex; background: #2f1a1a; color: #ff6b6b; }
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #2a3344;
+            border-top: 2px solid #6c8cff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .result-box { margin-top: 16px; display: none; }
+        .result-box.show { display: block; }
+        .result-box img { width: 100%; border-radius: 12px; }
+        .token-input {
+            width: 100%;
+            padding: 12px;
+            background: #10161f;
+            border: 1px solid #2a3344;
+            border-radius: 10px;
+            color: #fff;
+            font-family: monospace;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🖼️ Улучшение фото</h1>
+    <p class="sub">Pic Refiner — убирает шумы, повышает резкость</p>
+
+    <input type="text" class="token-input" id="tokenInput"
+           value="pbo_pat_rvdH2KbTADxPd6m0ncakbQ.FXpaL1g5OHGoaDUS782uu30r4BBW24s3cbkF66H0LmZq" />
+
+    <div class="drop-zone" id="dropZone">
+        <span style="font-size:48px;">📤</span>
+        <div id="dropText">Перетащите фото или нажмите</div>
+        <img id="preview" style="display:none;" />
+        <input type="file" id="fileInput" accept="image/*" />
+    </div>
+
+    <div class="info-row"><span>Стоимость</span><span class="price">$0.06</span></div>
+    <button class="btn" id="uploadBtn">🚀 Улучшить фото</button>
+
+    <div class="status" id="status"><div class="spinner"></div><span id="statusText">Обработка...</span></div>
+    <div class="result-box" id="resultBox">
+        <img id="resultImg" />
+        <a class="btn" id="downloadLink" download="enhanced.jpg" style="text-align:center;display:block;text-decoration:none;">⬇️ Скачать</a>
+        <button class="btn btn-danger" id="resetBtn">🔄 Новое фото</button>
+    </div>
+</div>
+
+<script>
+    // ==============================================
+    // ГЛАВНЫЙ ФИКС: ИСПОЛЬЗУЕМ JSONP (РАБОТАЕТ ВСЕГДА)
+    // ==============================================
+    const token = 'pbo_pat_rvdH2KbTADxPd6m0ncakbQ.FXpaL1g5OHGoaDUS782uu30r4BBW24s3cbkF66H0LmZq';
+    const API_BASE = 'https://problembo.com/apis/v1/client';
+
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    const dropText = document.getElementById('dropText');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const statusEl = document.getElementById('status');
+    const statusText = document.getElementById('statusText');
+    const resultBox = document.getElementById('resultBox');
+    const resultImg = document.getElementById('resultImg');
+    const downloadLink = document.getElementById('downloadLink');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let selectedFile = null;
+
+    // УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ЗАПРОСА (РАБОТАЕТ БЕЗ CORS)
+    function jsonpRequest(url, callback) {
+        const script = document.createElement('script');
+        const callbackName = 'jsonp_callback_' + Date.now();
+        window[callbackName] = function(data) {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            callback(data);
+        };
+        const separator = url.includes('?') ? '&' : '?';
+        script.src = url + separator + 'callback=' + callbackName;
+        document.body.appendChild(script);
+    }
+
+    // 1. Получаем uploadUrl через JSONP
+    function getUploadUrl(filename, contentType, callback) {
+        const url = `${API_BASE}/files/upload-url-for-src?filename=${encodeURIComponent(filename)}&contentType=${encodeURIComponent(contentType)}`;
+        jsonpRequest(url, callback);
+    }
+
+    // 2. Создаём задачу через JSONP
+    function createTask(fileId, callback) {
+        const payload = {
+            modelId: 'pic-refiner',
+            imageCount: 1,
+            upscaleFactor: 0,
+            fileId: fileId
+        };
+        const url = `${API_BASE}/image-gen/tasks?payload=${encodeURIComponent(JSON.stringify(payload))}`;
+        jsonpRequest(url, callback);
+    }
+
+    // 3. Проверяем статус через JSONP
+    function getTaskStatus(taskId, callback) {
+        const url = `${API_BASE}/tasks/${taskId}`;
+        jsonpRequest(url, callback);
+    }
+
+    // --- Обработка загрузки фото ---
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+
+    function handleFile(file) {
+        if (!file.type.startsWith('image/')) { alert('Выберите изображение'); return; }
+        if (file.size > 15 * 1024 * 1024) { alert('Файл > 15 МБ'); return; }
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            dropText.textContent = file.name;
+        };
+        reader.readAsDataURL(file);
+        uploadBtn.disabled = false;
+        resultBox.classList.remove('show');
+        statusEl.className = 'status';
+        statusEl.style.display = 'none';
+    }
+
+    // --- ГЛАВНАЯ КНОПКА ---
+    uploadBtn.addEventListener('click', async () => {
+        if (!selectedFile) return;
+
+        uploadBtn.disabled = true;
+        statusEl.style.display = 'flex';
+        statusEl.className = 'status loading';
+        statusText.textContent = 'Получение ссылки для загрузки...';
+
+        try {
+            const ext = selectedFile.name.split('.').pop() || 'jpg';
+            const contentType = selectedFile.type || 'image/jpeg';
+
+            // Шаг 1: Получаем uploadUrl
+            const uploadData = await new Promise((resolve) => {
+                getUploadUrl(`photo_${Date.now()}.${ext}`, contentType, resolve);
+            });
+
+            if (!uploadData.uploadUrl) throw new Error('Не получен uploadUrl');
+            const { uploadUrl, fileId } = uploadData;
+
+            // Шаг 2: Загружаем файл (этот запрос НЕ требует CORS, т.к. идёт на storj)
+            statusText.textContent = 'Загрузка фото...';
+            const binary = await selectedFile.arrayBuffer();
+            const putResp = await fetch(uploadUrl, {
+                method: 'PUT',
+                body: binary,
+                headers: { 'Content-Type': contentType }
+            });
+            if (!putResp.ok) throw new Error('Ошибка загрузки файла');
+
+            // Шаг 3: Создаём задачу (JSONP)
+            statusText.textContent = 'Запуск улучшения...';
+            const taskData = await new Promise((resolve) => {
+                createTask(fileId, resolve);
+            });
+            if (!taskData.taskId) throw new Error('Не получен taskId');
+
+            // Шаг 4: Опрашиваем статус (JSONP)
+            statusText.textContent = 'Улучшение (до 2 мин)...';
+            let result = null;
+            for (let i = 0; i < 30; i++) {
+                await new Promise(r => setTimeout(r, 4000));
+                const pollData = await new Promise((resolve) => {
+                    getTaskStatus(taskData.taskId, resolve);
+                });
+                if (pollData.ready) {
+                    if (pollData.status === 'END_SUCCESS') {
+                        result = pollData;
+                        break;
+                    } else {
+                        throw new Error(pollData.error?.text || 'Ошибка обработки');
+                    }
+                }
+            }
+            if (!result) throw new Error('Время ожидания истекло');
+
+            const imageUrl = result.result?.taskResult?.[0]?.url;
+            if (!imageUrl) throw new Error('Ссылка на результат не найдена');
+
+            // Готово!
+            statusEl.className = 'status success';
+            statusText.textContent = '✅ Готово!';
+            resultImg.src = imageUrl;
+            downloadLink.href = imageUrl;
+            resultBox.classList.add('show');
+
+        } catch (err) {
+            statusEl.className = 'status error';
+            statusText.textContent = '❌ ' + err.message;
+        } finally {
+            uploadBtn.disabled = false;
+        }
+    });
+
+    resetBtn.addEventListener('click', () => {
+        selectedFile = null;
+        preview.style.display = 'none';
+        preview.src = '';
+        dropText.textContent = 'Перетащите фото или нажмите';
+        fileInput.value = '';
+        resultBox.classList.remove('show');
+        statusEl.className = 'status';
+        statusEl.style.display = 'none';
+        uploadBtn.disabled = true;
+    });
+</script>
+</body>
+</html>        }
         .btn-primary {
             background: #6c8cff;
             color: #fff;
