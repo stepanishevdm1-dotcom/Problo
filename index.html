@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Улучшение фото — Pic Refiner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0b0e14;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: #181e29;
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 560px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            border: 1px solid #2a3344;
+        }
+        h1 {
+            color: #fff;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .sub {
+            color: #8892a8;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .drop-zone {
+            border: 2px dashed #2a3344;
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            color: #b0baca;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            background: #10161f;
+        }
+        .drop-zone:hover {
+            border-color: #4a5a7a;
+        }
+        .drop-zone.dragover {
+            border-color: #6c8cff;
+            background: #1a2332;
+        }
+        .drop-zone img {
+            max-width: 100%;
+            max-height: 240px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        .drop-zone .icon {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .drop-zone .hint {
+            font-size: 13px;
+            color: #5e6b84;
+            margin-top: 6px;
+        }
+        #fileInput {
+            display: none;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding: 14px 16px;
+            background: #10161f;
+            border-radius: 12px;
+            color: #b0baca;
+            font-size: 14px;
+        }
+        .info-row .price {
+            color: #6c8cff;
+            font-weight: 600;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            margin-top: 16px;
+        }
+        .btn:active {
+            transform: scale(0.97);
+        }
+        .btn-primary {
+            background: #6c8cff;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .btn-danger {
+            background: #ff6b6b;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            opacity: 0.9;
+        }
+        .status {
+            margin-top: 16px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        .status.loading {
+            display: flex;
+            background: #1a2332;
+            color: #b0baca;
+        }
+        .status.success {
+            display: flex;
+            background: #1a2f2a;
+            color: #6fcf97;
+        }
+        .status.error {
+            display: flex;
+            background: #2f1a1a;
+            color: #ff6b6b;
+        }
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #2a3344;
+            border-top: 2px solid #6c8cff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .result-box {
+            margin-top: 16px;
+            display: none;
+        }
+        .result-box.show {
+            display: block;
+        }
+        .result-box img {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid #2a3344;
+        }
+        .result-box .download-btn {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 10px 20px;
+            background: #2a3344;
+            color: #fff;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .result-box .download-btn:hover {
+            background: #3a4a5e;
+        }
+        .token-input {
+            width: 100%;
+            padding: 12px 14px;
+            background: #10161f;
+            border: 1px solid #2a3344;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 13px;
+            font-family: monospace;
+            outline: none;
+            margin-bottom: 16px;
+        }
+        .token-input:focus {
+            border-color: #6c8cff;
+        }
+        .token-input::placeholder {
+            color: #4a5a6e;
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 24px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🖼️ Улучшение фото</h1>
+    <p class="sub">Pic Refiner — убирает шумы, повышает резкость, прорабатывает лица</p>
+
+    <input type="text" class="token-input" id="tokenInput"
+           placeholder="Вставьте ваш API-токен (pbo_pat_...)"
+           value="pbo_pat_rvdH2KbTADxPd6m0ncakbQ.FXpaL1g5OHGoaDUS782uu30r4BBW24s3cbkF66H0LmZq" />
+
+    <div class="drop-zone" id="dropZone">
+        <span class="icon">📤</span>
+        <div id="dropText">Перетащите фото сюда или нажмите для выбора</div>
+        <div class="hint">JPG, PNG, WebP до 15 МБ</div>
+        <img id="preview" style="display:none;" alt="Preview" />
+        <input type="file" id="fileInput" accept="image/*" />
+    </div>
+
+    <div class="info-row">
+        <span>Стоимость</span>
+        <span class="price">$0.06</span>
+    </div>
+
+    <button class="btn btn-primary" id="uploadBtn">🚀 Улучшить фото</button>
+
+    <div class="status" id="status">
+        <div class="spinner"></div>
+        <span id="statusText">Обработка...</span>
+    </div>
+
+    <div class="result-box" id="resultBox">
+        <img id="resultImg" alt="Результат" />
+        <br />
+        <a class="download-btn" id="downloadLink" download="enhanced_photo.jpg">⬇️ Скачать</a>
+        <button class="btn btn-danger" id="resetBtn" style="margin-top:10px;">🔄 Новое фото</button>
+    </div>
+</div>
+
+<script>
+    const API_BASE = 'https://problembo.com/apis/v1/client';
+    const TOKEN_INPUT = document.getElementById('tokenInput');
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    const dropText = document.getElementById('dropText');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const statusEl = document.getElementById('status');
+    const statusText = document.getElementById('statusText');
+    const resultBox = document.getElementById('resultBox');
+    const resultImg = document.getElementById('resultImg');
+    const downloadLink = document.getElementById('downloadLink');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let selectedFile = null;
+
+    function getToken() {
+        return TOKEN_INPUT.value.trim();
+    }
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+    });
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handleFile(e.target.files[0]);
+    });
+
+    function handleFile(file) {
+        if (!file.type.startsWith('image/')) {
+            alert('Пожалуйста, выберите изображение.');
+            return;
+        }
+        if (file.size > 15 * 1024 * 1024) {
+            alert('Файл слишком большой (максимум 15 МБ).');
+            return;
+        }
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            dropText.textContent = file.name;
+        };
+        reader.readAsDataURL(file);
+        uploadBtn.disabled = false;
+        resultBox.classList.remove('show');
+        statusEl.className = 'status';
+        statusEl.style.display = 'none';
+    }
+
+    uploadBtn.addEventListener('click', async () => {
+        if (!selectedFile) return;
+        const token = getToken();
+        if (!token || !token.startsWith('pbo_pat_')) {
+            alert('Введите корректный API-токен (начинается с pbo_pat_)');
+            return;
+        }
+
+        uploadBtn.disabled = true;
+        statusEl.style.display = 'flex';
+        statusEl.className = 'status loading';
+        statusText.textContent = 'Загрузка фото...';
+
+        try {
+            const fileName = selectedFile.name || 'photo.jpg';
+            const ext = fileName.split('.').pop() || 'jpg';
+            const contentType = selectedFile.type || 'image/jpeg';
+
+            // 1. Получить presigned URL
+            const uploadUrlResp = await fetch(`${API_BASE}/files/upload-url-for-src`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filename: `upload_${Date.now()}.${ext}`,
+                    contentType: contentType
+                })
+            });
+
+            if (!uploadUrlResp.ok) {
+                const err = await uploadUrlResp.text();
+                throw new Error(`Ошибка получения URL: ${uploadUrlResp.status} — ${err}`);
+            }
+
+            const uploadData = await uploadUrlResp.json();
+            const { uploadUrl, fileId } = uploadData;
+
+            if (!uploadUrl || !fileId) {
+                throw new Error('Не удалось получить URL для загрузки');
+            }
+
+            // 2. Загрузить файл
+            statusText.textContent = 'Отправка файла...';
+            const binary = await selectedFile.arrayBuffer();
+            const putResp = await fetch(uploadUrl, {
+                method: 'PUT',
+                body: binary,
+                headers: { 'Content-Type': contentType }
+            });
+
+            if (!putResp.ok) {
+                throw new Error(`Ошибка загрузки: ${putResp.status}`);
+            }
+
+            // 3. Подтвердить загрузку
+            statusText.textContent = 'Подтверждение...';
+            const completeResp = await fetch(`${API_BASE}/files/upload-complete`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ fileId })
+            });
+
+            if (!completeResp.ok) {
+                throw new Error(`Ошибка подтверждения: ${completeResp.status}`);
+            }
+
+            // 4. Создать задачу Pic Refiner (ПРАВИЛЬНАЯ МОДЕЛЬ)
+            statusText.textContent = 'Запуск улучшения...';
+            const taskResp = await fetch(`${API_BASE}/image-gen/tasks`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    modelId: 'pic-refiner',
+                    imageCount: 1,
+                    upscaleFactor: 0,
+                    fileId: fileId
+                })
+            });
+
+            if (!taskResp.ok) {
+                const err = await taskResp.text();
+                throw new Error(`Ошибка создания задачи: ${taskResp.status} — ${err}`);
+            }
+
+            const taskData = await taskResp.json();
+            const taskId = taskData.taskId;
+
+            if (!taskId) {
+                throw new Error('Не получен taskId');
+            }
+
+            // 5. Polling
+            statusText.textContent = 'Улучшение (до 2 мин)...';
+            let result = null;
+            let attempts = 0;
+            const maxAttempts = 60;
+
+            while (attempts < maxAttempts) {
+                attempts++;
+                const pollResp = await fetch(`${API_BASE}/tasks/${taskId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!pollResp.ok) {
+                    throw new Error(`Ошибка опроса: ${pollResp.status}`);
+                }
+
+                const pollData = await pollResp.json();
+
+                if (pollData.ready) {
+                    if (pollData.status === 'END_SUCCESS') {
+                        result = pollData;
+                        break;
+                    } else if (pollData.status === 'END_ERR') {
+                        const errKey = pollData.error?.errorKey || 'unknown';
+                        const errText = pollData.error?.text || 'Неизвестная ошибка';
+                        throw new Error(`Ошибка: ${errKey} — ${errText}`);
+                    } else {
+                        throw new Error(`Завершено с статусом: ${pollData.status}`);
+                    }
+                }
+
+                await new Promise(r => setTimeout(r, 4000));
+            }
+
+            if (!result) {
+                throw new Error('Превышено время ожидания (5 минут)');
+            }
+
+            const imageUrl = result.result?.taskResult?.[0]?.url;
+            if (!imageUrl) {
+                throw new Error('Ссылка на результат не найдена');
+            }
+
+            statusEl.className = 'status success';
+            statusText.textContent = '✅ Готово!';
+            resultImg.src = imageUrl;
+            downloadLink.href = imageUrl;
+            resultBox.classList.add('show');
+            resultBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        } catch (err) {
+            console.error(err);
+            statusEl.className = 'status error';
+            statusText.textContent = '❌ ' + err.message;
+        } finally {
+            uploadBtn.disabled = false;
+        }
+    });
+
+    resetBtn.addEventListener('click', () => {
+        selectedFile = null;
+        preview.style.display = 'none';
+        preview.src = '';
+        dropText.textContent = 'Перетащите фото сюда или нажмите для выбора';
+        fileInput.value = '';
+        resultBox.classList.remove('show');
+        statusEl.className = 'status';
+        statusEl.style.display = 'none';
+        uploadBtn.disabled = true;
+    });
+</script>
+
+</body>
+  </html>
